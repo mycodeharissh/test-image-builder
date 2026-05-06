@@ -16,26 +16,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout repo
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Authenticate to GCP
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Set up gcloud
+      # Setup gcloud
+      - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker for GAR
+      # Configure Docker for GAR
+      - name: Configure Docker
         run: |
           gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
 
-      - name: Build Docker image
+      # Debug (optional but useful)
+      - name: Debug file structure
         run: |
-          docker build -t $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:latest \
-            ./dockerfiles/cp-server-connect
+          pwd
+          ls -R
 
-      - name: Push Docker image
+      # Build and Push Image
+      - name: Build and Push Docker Image
         run: |
-          docker push $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:latest
+          docker buildx build \
+            --file dockerfiles/cp-server-connect/Dockerfile \
+            --tag $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:latest \
+            --push \
+            dockerfiles/cp-server-connect
